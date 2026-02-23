@@ -1,5 +1,6 @@
 package com.restrunner.core.engine;
 
+import com.restrunner.core.engine.client.HttpClientSingleton;
 import com.restrunner.core.pojo.ApiRequest;
 import com.restrunner.core.pojo.ApiResponse;
 import com.restrunner.core.utils.JavaHttpTransport;
@@ -13,9 +14,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class TestSend {
     public  static  CompletableFuture<ApiResponse> execute(ApiRequest request){
-
-
-
 
         HttpClient httpClient = HttpClientSingleton.get();
 

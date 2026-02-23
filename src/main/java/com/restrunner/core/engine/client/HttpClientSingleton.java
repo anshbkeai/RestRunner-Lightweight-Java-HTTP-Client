@@ -1,4 +1,4 @@
-package com.restrunner.core.engine;
+package com.restrunner.core.engine.client;
 
 import java.net.http.HttpClient;
 

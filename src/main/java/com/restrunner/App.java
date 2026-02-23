@@ -2,6 +2,7 @@ package com.restrunner;
 
 
 
+import com.restrunner.core.engine.HttpEngine;
 import com.restrunner.core.engine.TestSend;
 import com.restrunner.core.pojo.ApiRequest;
 import com.restrunner.core.pojo.ApiResponse;
@@ -73,6 +74,10 @@ public class App
                 .thenAccept(x -> System.out.println(x.toString()))
                 .join();
 
+
+        apiRequest = new ApiRequest("https://jsonplaceholder.typicode.com/posts/1", RequestMethod.GET,null, Duration.ofSeconds(3),null);
+        HttpEngine httpEngine = HttpEngine.getInstance();
+        httpEngine.execute(apiRequest).thenAccept(x -> System.out.println(x.toString())).join();
 
 //        get = uri+"task/run";
 //        apiRequest = new ApiRequest(get, RequestMethod.POST,null, Duration.ofSeconds(25),null);

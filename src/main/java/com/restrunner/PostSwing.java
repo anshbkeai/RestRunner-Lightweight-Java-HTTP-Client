@@ -1,9 +1,15 @@
 package com.restrunner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.restrunner.core.engine.HttpEngine;
 import com.restrunner.core.pojo.ApiRequest;
 import com.restrunner.core.pojo.ApiResponse;
 import com.restrunner.core.pojo.RequestMethod;
+import com.restrunner.core.user.db.HistoryDB;
+import com.restrunner.core.user.db.UserDB;
+import com.restrunner.core.user.pojo.History;
+import com.restrunner.core.user.service.AuthService;
+import com.restrunner.core.user.service.SyncService;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -81,6 +87,8 @@ public class PostSwing extends JFrame {
         add(buildTitleBar(),  BorderLayout.NORTH);
         add(buildSidebar(),   BorderLayout.WEST);
         add(buildMain(),      BorderLayout.CENTER);
+
+        getHistoryfromDb();
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -92,6 +100,7 @@ public class PostSwing extends JFrame {
         bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, C_BORDER));
         bar.setPreferredSize(new Dimension(0, 42));
 
+        // LEFT SIDE
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 10));
         left.setOpaque(false);
 
@@ -106,9 +115,10 @@ public class PostSwing extends JFrame {
         left.add(logo);
         left.add(version);
 
-        // Top nav tabs
+        // CENTER TABS
         JPanel tabs = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 8));
         tabs.setOpaque(false);
+
         for (String t : new String[]{"Collections", "Environments", "History"}) {
             JLabel tab = new JLabel(t);
             tab.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -117,18 +127,51 @@ public class PostSwing extends JFrame {
             tabs.add(tab);
         }
 
-        bar.add(left,  BorderLayout.WEST);
-        bar.add(tabs,  BorderLayout.CENTER);
+        // RIGHT USER PANEL
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 8));
+        right.setOpaque(false);
+
+        JLabel userLabel = new JLabel("👤 " + UserDB.getInstance().getUser().get().getEmail()); // <-- use your variable
+        userLabel.setForeground(Color.WHITE);
+        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        userLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Popup menu
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem logout = new JMenuItem("Logout");
+
+        logout.addActionListener(e -> {
+            AuthService.logout();
+
+            dispose(); // close main window
+            new LoginFrame(); // back to login
+        });
+
+        menu.add(logout);
+
+        // Click to open menu
+        userLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                menu.show(userLabel, 0, userLabel.getHeight());
+            }
+        });
+
+        right.add(userLabel);
+
+        bar.add(left, BorderLayout.WEST);
+        bar.add(tabs, BorderLayout.CENTER);
+        bar.add(right, BorderLayout.EAST);
+
         return bar;
     }
-
     // ══════════════════════════════════════════════════════════════════════
     //  SIDEBAR
     // ══════════════════════════════════════════════════════════════════════
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setBackground(C_SIDEBAR);
-        sidebar.setPreferredSize(new Dimension(220, 0));
+        sidebar.setPreferredSize(new Dimension(350, 0));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, C_BORDER));
 
         // Sidebar header
@@ -179,7 +222,7 @@ public class PostSwing extends JFrame {
             mLabel.setForeground(METHOD_COLORS.getOrDefault(method, C_TEXT_DIM));
             mLabel.setPreferredSize(new Dimension(52, 16));
 
-            JLabel uLabel = new JLabel(url.length() > 22 ? url.substring(0, 22) + "…" : url);
+            JLabel uLabel = new JLabel(url);
             uLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
             uLabel.setForeground(sel ? C_TEXT : C_TEXT_DIM);
 
@@ -262,6 +305,26 @@ public class PostSwing extends JFrame {
         sidebar.add(header,     BorderLayout.NORTH);
         sidebar.add(scroll,     BorderLayout.CENTER);
         sidebar.add(quickPanel, BorderLayout.SOUTH);
+
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        rightPanel.setOpaque(false);
+
+        JButton syncBtn = new JButton("Sync to Server");
+        syncBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        syncBtn.setForeground(Color.BLACK);
+        syncBtn.setBackground(new Color(50, 120, 200));
+        syncBtn.setFocusPainted(false);
+        syncBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+// 👉 YOU will call your method here
+        syncBtn.addActionListener(e -> syncHistory());
+
+        rightPanel.add(syncBtn);
+        rightPanel.add(clearBtn);
+
+        header.add(title, BorderLayout.WEST);
+        header.add(rightPanel, BorderLayout.EAST);
+
         return sidebar;
     }
 
@@ -707,8 +770,10 @@ public class PostSwing extends JFrame {
                 timeLabel.setText(elapsed + " ms");
                 sizeLabel.setText(formatSize(size));
 
-                historyModel.add(0, method + " " + url);
-                if (historyModel.size() > 30) historyModel.remove(historyModel.size() - 1);
+                savetoDB(apiRequest,response);
+                getHistoryfromDb();
+
+                // Save the Api restquest and Api respose for the user
             });
         }).exceptionally(ex -> {
             long elapsed = System.currentTimeMillis() - start;
@@ -833,14 +898,66 @@ public class PostSwing extends JFrame {
         sp.getHorizontalScrollBar().setBackground(C_PANEL);
     }
 
+    private void syncHistory() {
+        new SwingWorker<Void, Void>() {
+
+            @Override
+            protected Void doInBackground() {
+                try {
+                    // 🔹 TODO: Replace with your DB fetch
+                    new SyncService().SyncHistory();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                JOptionPane.showMessageDialog(null, "History Synced!");
+            }
+
+        }.execute();
+    }
+    private void getHistoryfromDb() {
+        historyModel.clear();
+
+         HistoryDB.getInstance().getLast30().stream().forEach(x -> {
+
+            historyModel.addElement(x.getMethod()   + " " + x.getUri());
+         });
+//        if (historyModel.size() > 30) historyModel.remove(historyModel.size() - 1);
+    }
+
+    private void savetoDB(ApiRequest apiRequest,ApiResponse response) {
+        History history = new History();
+        history.setResponse(response);
+        history.setRequest(apiRequest);
+        history.setUri(apiRequest.getUri());
+        history.setMethod(apiRequest.getRequestMethod());
+
+
+        HistoryDB.getInstance().save(history);
+    }
     // ══════════════════════════════════════════════════════════════════════
     //  ENTRY POINT
     // ══════════════════════════════════════════════════════════════════════
     public static void main(String[] args) {
         // Use system look for native scroll bars etc., then override colors
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+        try {
+            SwingUtilities.invokeLater(() -> {
+
+                if (UserDB.getInstance().getUser().isPresent()) {
+                    new PostSwing().setVisible(true);
+                } else {
+                    new LoginFrame();
+                }
+
+            });
+        }
         catch (Exception ignored) {}
 
-        SwingUtilities.invokeLater(() -> new PostSwing().setVisible(true));
+
     }
 }

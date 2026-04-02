@@ -1,10 +1,17 @@
 package com.restrunner.core.pojo;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ApiRequest {
     private String uri;
     private RequestMethod requestMethod;
@@ -12,13 +19,13 @@ public class ApiRequest {
     private Duration timeout;
     private String body;
 
-    public ApiRequest(String uri, RequestMethod requestMethod, Map<String, List<String>> headers, Duration timeout, String body) {
-        this.uri = uri;
-        this.requestMethod = requestMethod;
-        this.headers = headers;
-        this.timeout = timeout;
-        this.body = body;
-    }
+//    public ApiRequest(String uri, RequestMethod requestMethod, Map<String, List<String>> headers, Duration timeout, String body) {
+//        this.uri = uri;
+//        this.requestMethod = requestMethod;
+//        this.headers = headers;
+//        this.timeout = timeout;
+//        this.body = body;
+//    }
 
     public String getUri() {
         return uri;

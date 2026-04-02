@@ -1,9 +1,16 @@
 package com.restrunner.core.pojo;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+@Data
+
+@AllArgsConstructor
 public class ApiResponse {
     private int statusCode;
     private Map<String, List<String>> headers;
@@ -11,13 +18,13 @@ public class ApiResponse {
     private String body;
     private String error;
 
-    public ApiResponse(int statusCode, Map<String, List<String>> headers, Duration duration, String body, String error) {
-        this.statusCode = statusCode;
-        this.headers = headers;
-        this.duration = duration;
-        this.body = body;
-        this.error = error;
-    }
+//    public ApiResponse(int statusCode, Map<String, List<String>> headers, Duration duration, String body, String error) {
+//        this.statusCode = statusCode;
+//        this.headers = headers;
+//        this.duration = duration;
+//        this.body = body;
+//        this.error = error;
+//    }
 
     public int getStatusCode() {
         return statusCode;

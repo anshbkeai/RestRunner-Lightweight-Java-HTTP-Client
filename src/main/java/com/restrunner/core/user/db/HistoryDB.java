@@ -86,4 +86,16 @@ public class HistoryDB {
 
         return list;
     }
+
+    public void delete() {
+        String sql = "Delete  from api_history";
+        Statement statement = null;
+        try {
+            statement = conn.createStatement();
+            statement.execute(sql);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
 }

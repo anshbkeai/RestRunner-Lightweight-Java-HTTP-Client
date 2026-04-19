@@ -1,6 +1,9 @@
 package com.restrunner.web.servlet;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.restrunner.web.db.WebDB;
+import com.restrunner.web.pojo.History;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -12,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(urlPatterns = {"/api/sync", "/history"})
+@WebServlet("/history")
 public class SyncServlet extends HttpServlet {
 
     @Override
@@ -30,16 +33,5 @@ public class SyncServlet extends HttpServlet {
         }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String token = req.getHeader("token");
-        if (token != null && WebDB.getInstance().isValidToken(token)) {
-            // Logic for syncing data from the client (SyncService)
-            // For now, we just acknowledge receipt
-            resp.getWriter().write("{\"status\":\"synced\"}");
-        } else {
-            resp.setStatus(401);
-            resp.getWriter().write("{\"error\":\"Unauthorized\"}");
-        }
-    }
+
 }

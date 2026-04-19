@@ -16,8 +16,8 @@ public class App {
 //
 //            System.out.println( UserDB.getInstance().getUser().get().toString());
 
-            userDB.delete("user-123");
 
+            HistoryDB.getInstance().delete();
             for(History history : HistoryDB.getInstance().getLast30()) {
                 System.out.println(history.toString());
 
